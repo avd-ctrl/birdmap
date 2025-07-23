@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 const EBIRD_API_KEY = "679opnhtujv";
 
@@ -63,34 +65,28 @@ export function Welcome() {
   });
 
   useEffect(() => {
-    let map: any;
-    Promise.all([
-      import("leaflet"),
-      import("leaflet/dist/leaflet.css"),
-    ]).then(([L]) => {
-      const greenIcon = new (L as any).default.Icon({
-        iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
-        shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
-      });
-      if (mapRef.current && !mapInstance.current) {
-        map = (L as any).default.map(mapRef.current).setView([20.5937, 78.9629], 5);
-        mapInstance.current = map;
-        (L as any).default.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: "© OpenStreetMap contributors",
-        }).addTo(map);
-        (L as any).default.marker([20.5937, 78.9629], {
-          icon: greenIcon,
-          title: "Bird Location"
-        })
-          .addTo(map)
-          .bindPopup("India - Bird Map Demo")
-          .openPopup();
-      }
+    const greenIcon = new L.Icon({
+      iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+      shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
     });
+    if (mapRef.current && !mapInstance.current) {
+      const map = L.map(mapRef.current).setView([20.5937, 78.9629], 5);
+      mapInstance.current = map;
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors",
+      }).addTo(map);
+      L.marker([20.5937, 78.9629], {
+        icon: greenIcon,
+        title: "Bird Location"
+      })
+        .addTo(map)
+        .bindPopup("India - Bird Map Demo")
+        .openPopup();
+    }
     return () => {
       if (mapInstance.current) mapInstance.current.remove();
       mapInstance.current = null;
@@ -100,35 +96,31 @@ export function Welcome() {
   // Show only filtered markers on the map
   useEffect(() => {
     if (!mapInstance.current) return;
-    Promise.all([
-      import("leaflet"),
-    ]).then(([L]) => {
-      markersRef.current.forEach(marker => marker.remove());
-      markersRef.current = [];
-      const greenIcon = new (L as any).default.Icon({
-        iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
-        shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
-      });
-      filteredSightings.forEach((obs: any, i: number) => {
-        if (obs.lat && obs.lng) {
-          const marker = (L as any).default.marker([obs.lat, obs.lng], { icon: greenIcon, title: obs.comName })
-            .addTo(mapInstance.current)
-            .on('click', () => {
-              setSelectedBird(obs);
-              setOpenPopupIndex(i);
-              markersRef.current.forEach((m, idx) => {
-                if (idx !== i) m.closePopup();
-              });
-              marker.openPopup();
-            })
-            .bindPopup(`<b>${obs.comName}</b><br/><i>${obs.locName}</i><br/>${obs.obsDt}`);
-          markersRef.current.push(marker);
-        }
-      });
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
+    const greenIcon = new L.Icon({
+      iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+      shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+    filteredSightings.forEach((obs: any, i: number) => {
+      if (obs.lat && obs.lng) {
+        const marker = L.marker([obs.lat, obs.lng], { icon: greenIcon, title: obs.comName })
+          .addTo(mapInstance.current)
+          .on('click', () => {
+            setSelectedBird(obs);
+            setOpenPopupIndex(i);
+            markersRef.current.forEach((m, idx) => {
+              if (idx !== i) m.closePopup();
+            });
+            marker.openPopup();
+          })
+          .bindPopup(`<b>${obs.comName}</b><br/><i>${obs.locName}</i><br/>${obs.obsDt}`);
+        markersRef.current.push(marker);
+      }
     });
   }, [filteredSightings, selectedState]);
 
